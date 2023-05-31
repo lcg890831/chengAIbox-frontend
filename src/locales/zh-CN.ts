@@ -24,8 +24,16 @@ export default {
     wrong: '好像出错了，请稍后再试。',
     success: '操作成功',
     failed: '操作失败',
-    verify: '验证',
-    unauthorizedTips: '未经授权，请先进行验证。',
+
+    verify: '登录/注册',
+    unauthorizedTips: '登录到橙光AI',
+    btnGetVerify: '获取验证码',
+    phUserName: '请输入邮箱/手机号',
+    phVerifyCode: '请输入6位验证码',
+    loginDesc: '请使用邮箱/手机登录，未注册过橙光AI的用户我们将会自动为您注册',
+    loginDesc2: '登录或完成注册即代表你同意用户协议和隐私政策',
+    afterVer: '秒后可重发',
+    sendSucc: '发送成功',
   },
   chat: {
     newChatButton: '新建聊天',
