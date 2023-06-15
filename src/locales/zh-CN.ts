@@ -26,14 +26,17 @@ export default {
     failed: '操作失败',
 
     verify: '登录/注册',
-    unauthorizedTips: '登录到橙光AI',
+    unauthorizedTips: '欢迎访问橙光AI',
     btnGetVerify: '获取验证码',
     phUserName: '请输入邮箱/手机号',
     phVerifyCode: '请输入6位验证码',
+    phPassword :'请输入密码',
     loginDesc: '请使用邮箱/手机登录，未注册过橙光AI的用户我们将会自动为您注册',
-    loginDesc2: '登录或完成注册即代表你同意用户协议和隐私政策',
+    loginDesc2: 'Chatgpt正版AI助手<b>限免</b>注册中，注册就送<b>1W</b>个token！大概可提问200余次~满足您的日常AI需求',
     afterVer: '秒后可重发',
     sendSucc: '发送成功',
+    contact: '联系我们',
+    
   },
   chat: {
     newChatButton: '新建聊天',

@@ -58,9 +58,23 @@ export function fetchSession<T>() {
   })
 }
 
-export function fetchVerify<T>(token: string) {
+export function sendVerifyCode<T>(username: string) {
+  return post<T>({
+    url: '/sendVerifyCode',
+    data: { 'username':username },
+  })
+}
+
+export function login<T>(loginParam: Object) {
+  return post<T>({
+    url: '/login',
+    data: loginParam,
+  })
+}
+
+export function fetchVerify<T>(loginParam: Object) {
   return post<T>({
     url: '/verify',
-    data: { token },
+    data: loginParam,
   })
 }

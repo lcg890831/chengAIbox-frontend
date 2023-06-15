@@ -16,7 +16,7 @@ export interface HttpOption {
 export interface Response<T = any> {
   data: T
   message: string | null
-  status: string
+  status: number
 }
 
 function http<T = any>(
@@ -24,21 +24,20 @@ function http<T = any>(
 ) {
   const successHandler = (res: AxiosResponse<Response<T>>) => {
     const authStore = useAuthStore()
-
-    if (res.data.status === 'Success' || typeof res.data === 'string')
-      return res.data
-
-    if (res.data.status === 'Unauthorized') {
-      authStore.removeToken()
+    console.log(res )
+    if (!authStore.token) {
       window.location.reload()
+      return Promise.reject(res.data)
     }
-
-    return Promise.reject(res.data)
+    if (res.data)
+      return res.data
+    
   }
 
   const failHandler = (error: Response<Error>) => {
     afterRequest?.()
-    throw new Error(error?.message || 'Error')
+    
+    throw new Error(error?.data?.message || 'Error')
   }
 
   beforeRequest?.()
