@@ -69,7 +69,7 @@ async function onConversation() {
     return
 
   controller = new AbortController()
-
+  //将提问加入chat
   addChat(
     +uuid,
     {
@@ -88,9 +88,31 @@ async function onConversation() {
 
   let options: Chat.ConversationRequest = {}
   const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-
-  if (lastContext && usingContext.value)
+  console.log(conversationList)
+  if (lastContext && usingContext.value){
     options = { ...lastContext }
+    options.historyChat = []
+    let limit = 4000
+    let buffer = 300
+    let curLimit = message.length*1.5
+    //循环构建历史对话
+    for(var i=conversationList.value.length-1;i>=0;i--){
+      let conver = conversationList.value[i]
+      let historyChat: Chat.HistoryChat = {}
+      if(!conver.error && conver.cost!=null && conver.cost>0){
+        curLimit+=conver.cost
+        historyChat.prompt = conver.requestOptions.prompt
+        historyChat.text = conver.text
+        options.historyChat.push(historyChat)
+        if(limit-buffer<=curLimit){
+          break;
+        }
+      }
+    }
+    options.historyChat.reverse()
+  }
+  
+  console.log('options',options)
 
   addChat(
     +uuid,
@@ -132,6 +154,7 @@ async function onConversation() {
                 inversion: false,
                 error: false,
                 loading: true,
+                cost: data.cost,
                 conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
                 requestOptions: { prompt: message, options: { ...options } },
               },

@@ -6,8 +6,14 @@ declare namespace Chat {
 		inversion?: boolean
 		error?: boolean
 		loading?: boolean
+		cost?: number
 		conversationOptions?: ConversationRequest | null
 		requestOptions: { prompt: string; options?: ConversationRequest | null }
+	}
+
+	interface HistoryChat {
+		prompt?: string
+		text?: string
 	}
 
 	interface History {
@@ -26,6 +32,7 @@ declare namespace Chat {
 	interface ConversationRequest {
 		conversationId?: string
 		parentMessageId?: string
+		historyChat?: HistoryChat[]
 	}
 
 	interface ConversationResponse {

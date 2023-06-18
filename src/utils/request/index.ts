@@ -24,9 +24,10 @@ function http<T = any>(
 ) {
   const successHandler = (res: AxiosResponse<Response<T>>) => {
     const authStore = useAuthStore()
-    console.log(res )
-    if (!authStore.token) {
+    console.log(res.status )
+    if (res.status==401) {
       window.location.reload()
+      authStore.removeToken()
       return Promise.reject(res.data)
     }
     if (res.data)

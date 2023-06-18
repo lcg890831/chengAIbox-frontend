@@ -3,9 +3,9 @@ import { useAuthStoreWithout } from '@/store/modules/auth'
 
 export function setupPageGuard(router: Router) {
   router.beforeEach(async (to, from, next) => {
-    console.log(to)
-    console.log(from)
-    console.log(next)
+    console.log('from',from)
+    console.log('to',to)
+ 
     const authStore = useAuthStoreWithout()
     if (!authStore.session) {
       try {

@@ -19,7 +19,6 @@ const loading = ref(false)
 const loadingVerify = ref(false)
 const token = ref('')
 const username = ref('')
-const password = ref('')
 const loginType = ref(1)
 const countdownSeconds = ref(60)
 const disabled = ref(false)
@@ -38,10 +37,10 @@ async function handleVerify() {
   const secretKey = token.value.trim()
   let loginParam = {
     'username': username.value.trim(),
-    'password': password.value.trim() ,
+    'password': token.value.trim() ,
     'verifyCode':secretKey,
     'loginType' : loginType.value, //1.验证码 2.密码
-    'isMobile' : isMobile
+    'isMobile' : isMobile.value
   };
 
   if (!secretKey||!username.value||!loginType.value)
@@ -102,11 +101,15 @@ function stopCountdown() {
   clearInterval(countdownInterval)
   countdownSeconds.value = 60
   disabled.value = false
-  buttonText.value = i18n('common.btnGetVerify')
+  buttonText.value = i18n('common.btnGetVerify') 
 }
 
 function handleLoginType (value: string) {
-  console.log(loginType.value)
+  if(value=='password'){
+    loginType.value = 2
+  }else if(value='verify'){
+    loginType.value = 1
+  }
   }
 </script>
 
@@ -156,7 +159,7 @@ function handleLoginType (value: string) {
           <NInput v-model:value="username" type="text" :placeholder="$t('common.phUserName')" clearable />
         </NFormItemRow>
         <NFormItemRow label="密码">
-          <NInput v-model:value="password" type="password"  :placeholder="$t('common.phPassword')" @keypress="handlePress" />
+          <NInput v-model:value="token" type="password"  :placeholder="$t('common.phPassword')" @keypress="handlePress" />
         </NFormItemRow>
       </NForm>
       </NTabPane>
@@ -173,10 +176,10 @@ function handleLoginType (value: string) {
         </NButton>
         
         <br>
-        <p class="text-base text-center text-slate-500 dark:text-slate-500">
+        <p class="text-base text-center text-slate-500 dark:text-[#ffffff]">
           {{ $t('common.loginDesc') }}
         </p>
-        <p class="text-base text-center text-slate-500 dark:text-slate-500">
+        <p class="text-base text-center text-[#128346] dark:text-[#4B9E5F]">
          <span style="color:#18492f"> Chatgpt正版AI助手<b>限免</b>注册中，8月1日前新用户来就送<b>1个月超级会员！！</b></span>
         </p>
         <!-- <p class="text-base text-center text-slate-500 dark:text-slate-500">
