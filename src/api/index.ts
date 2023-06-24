@@ -65,7 +65,7 @@ export function sendVerifyCode<T>(username: string) {
   })
 }
 
-export function login<T>(loginParam: Object) {
+export function login<T = any>(loginParam: Object) {
   return post<T>({
     url: '/login',
     data: loginParam,

@@ -32,7 +32,7 @@ function http<T = any>(
     }
     if (res.data)
       return res.data
-    
+    return Promise.reject(res.data)
   }
 
   const failHandler = (error: Response<Error>) => {

@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 import { computed, ref } from 'vue'
-import { NButton, NInput, NInputGroup, NModal, NSpace, useMessage,NTabPane,NTabs,NFormItemRow,NForm } from 'naive-ui'
-import { fetchVerify,sendVerifyCode,login } from '@/api'
+import { NButton, NInput,  NModal, NSpace, useMessage,NTabPane,NTabs,NFormItemRow,NForm } from 'naive-ui'
+import { sendVerifyCode,login } from '@/api'
 import { useAuthStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 
@@ -23,6 +23,7 @@ const loginType = ref(1)
 const countdownSeconds = ref(60)
 const disabled = ref(false)
 const disabledVerify = computed(() => !token.value.trim() || loading.value)
+
 let countdownInterval: any
 let i18n: any
 const buttonText = ref('')

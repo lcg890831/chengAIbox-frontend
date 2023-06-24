@@ -1,5 +1,6 @@
 import type { Router } from 'vue-router'
 import { useAuthStoreWithout } from '@/store/modules/auth'
+import { login } from '@/api'
 
 export function setupPageGuard(router: Router) {
   router.beforeEach(async (to, from, next) => {
@@ -10,8 +11,26 @@ export function setupPageGuard(router: Router) {
     if (!authStore.session) {
       try {
         const data = await authStore.getSession()
-        if (String(data.auth) === 'false' && authStore.token)
-          authStore.removeToken()
+        //token为空，如果存在wxopenId用wxopenId登录
+        if(!authStore.token){
+          console.log(data)
+          if (to.query.wxopenId) {
+            console.log(to.query.wxopenId)
+            let loginParam = {
+              'username': to.query.wxopenId,
+              'loginType' : 3, //1.验证码 2.密码 3.微信
+            };
+            
+            try {
+              const result = await login(loginParam)
+              console.log('result',result)
+              authStore.setToken(result.data.token)
+            }
+            catch (error: any) {
+              authStore.removeToken()
+            }
+          }
+        }
         if (to.path === '/500')
           next({ name: 'Root' })
         else
