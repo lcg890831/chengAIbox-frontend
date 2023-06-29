@@ -23,6 +23,8 @@ function setupPlugins(env: ImportMetaEnv): PluginOption[] {
 
 export default defineConfig((env) => {
   const viteEnv = loadEnv(env.mode, process.cwd()) as unknown as ImportMetaEnv
+  console.log('remote', viteEnv.VITE_APP_API_REMOTE_URL)
+  console.log('base', viteEnv.VITE_APP_API_BASE_URL)
 
   return {
     resolve: {
@@ -33,11 +35,11 @@ export default defineConfig((env) => {
     plugins: setupPlugins(viteEnv),
     server: {
       host: '0.0.0.0',
-      port: 1002,
+      port: 3000,
       open: false,
       proxy: {
         '/api': {
-          target: viteEnv.VITE_APP_API_BASE_URL,
+          target: env.mode === 'staging' ? viteEnv.VITE_APP_API_REMOTE_URL : viteEnv.VITE_APP_API_BASE_URL,
           changeOrigin: true, // 允许跨域
           rewrite: path => path.replace('/api/', '/api/'),
         },

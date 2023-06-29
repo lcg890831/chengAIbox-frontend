@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "dev": "vite",
+    "remote": "vite --mode staging",
     "build": "run-p  build-only",
     "preview": "vite preview",
     "build-only": "vite build",
