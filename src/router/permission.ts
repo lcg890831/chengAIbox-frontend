@@ -12,8 +12,8 @@ export function setupPageGuard(router: Router) {
       try {
         const data = await authStore.getSession()
         //token为空，如果存在wxopenId用wxopenId登录
-        if(!authStore.token){
-          console.log(data)
+        //if(!authStore.token){
+          console.log('nosession',data)
           if (to.query.wxopenId) {
             console.log(to.query.wxopenId)
             let loginParam = {
@@ -30,7 +30,7 @@ export function setupPageGuard(router: Router) {
               authStore.removeToken()
             }
           }
-        }
+       // }
         if (to.path === '/500')
           next({ name: 'Root' })
         else

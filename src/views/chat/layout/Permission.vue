@@ -1,7 +1,7 @@
 <script setup lang='ts'>
-import { computed, ref } from 'vue'
-import { NButton, NInput,  NModal, NSpace, useMessage,NTabPane,NTabs,NFormItemRow,NForm } from 'naive-ui'
-import { sendVerifyCode,login } from '@/api'
+import { computed, ref,onMounted } from 'vue'
+import { NButton, NInput,  NModal, NSpace, useMessage,NTabPane,NTabs,NFormItemRow,NForm,NImage } from 'naive-ui'
+import { sendVerifyCode,login,generatewxQRCode } from '@/api'
 import { useAuthStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 
@@ -19,7 +19,7 @@ const loading = ref(false)
 const loadingVerify = ref(false)
 const token = ref('')
 const username = ref('')
-const loginType = ref(1)
+const loginType = ref(4)
 const countdownSeconds = ref(60)
 const disabled = ref(false)
 const disabledVerify = computed(() => !token.value.trim() || loading.value)
@@ -27,6 +27,7 @@ const disabledVerify = computed(() => !token.value.trim() || loading.value)
 let countdownInterval: any
 let i18n: any
 const buttonText = ref('')
+const showPass = ref(false)
 import('@/locales')
   .then(({ t }) => {
     // 在导入成功后使用模块的功能
@@ -106,12 +107,64 @@ function stopCountdown() {
 }
 
 function handleLoginType (value: string) {
+  console.log(value)
   if(value=='password'){
     loginType.value = 2
-  }else if(value='verify'){
+  }else if(value=='verify'){
     loginType.value = 1
+  }else if(value=='wechat'){
+    loginType.value = 4
   }
   }
+
+  const qrcodeElement = ref(null);
+    const callbackSuccess = ref(false);
+    const pollingTimer = ref(null);
+    const qrcodeImage = ref(null);
+
+    const generateQRCode = async () => {
+      try {
+        const response = await generatewxQRCode();
+        console.log(response.data.ticket)
+        console.log(response.data)
+        qrcodeImage.value = 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket='+encodeURIComponent(response.data.ticket);
+        
+        //pollingCallbackStatus();
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const pollingCallbackStatus = () => {
+      pollingTimer.value = setInterval(async () => {
+        try {
+          const response = await axios.get('/api/checkCallbackStatus');
+          if (response.data.callbackSuccess) {
+            clearInterval(pollingTimer.value);
+            callbackSuccess.value = true;
+            // 根据业务需求，设置 token
+          } else if (response.data.callbackTimeout) {
+            clearInterval(pollingTimer.value);
+            // 处理超时逻辑，比如显示刷新按钮
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }, 5000); // 轮询间隔时间，根据需求进行调整
+    };
+
+    const refreshQRCode = () => {
+      clearInterval(pollingTimer.value);
+      callbackSuccess.value = false;
+      generateQRCode();
+    };
+
+    onMounted(() => {
+      if(!isMobile.value){
+        generateQRCode();
+      }
+    });
+
 </script>
 
 <template>
@@ -128,13 +181,17 @@ function handleLoginType (value: string) {
         <br>
         <NTabs
       class="card-tabs"
-      default-value="verify"
       size="medium"
       animated
       @update:value="handleLoginType"
       pane-wrapper-style="margin: 0 -4px"
       pane-style=" box-sizing: border-box;"
     >
+    <NTabPane name="wechat" tab="微信扫码登录" v-if="!isMobile">
+      <NForm size="medium">
+        <NImage :src="qrcodeImage" ref="qrcodeElement" v-show="qrcodeImage"/>
+      </NForm>
+      </NTabPane>
     <NTabPane name="verify" tab="验证码登录">
         <NForm size="medium">
           <NFormItemRow label="手机号/邮箱">
@@ -154,7 +211,7 @@ function handleLoginType (value: string) {
           </NFormItemRow>
         </NForm>
       </NTabPane>
-    <NTabPane name="password" tab="密码登录">
+    <NTabPane name="password" tab="密码登录" v-if="showPass">
       <NForm size="medium">
       <NFormItemRow label="用户名">
           <NInput v-model:value="username" type="text" :placeholder="$t('common.phUserName')" clearable />
@@ -164,6 +221,7 @@ function handleLoginType (value: string) {
         </NFormItemRow>
       </NForm>
       </NTabPane>
+
       </NTabs>
         <NButton
           type="primary"
@@ -172,6 +230,7 @@ function handleLoginType (value: string) {
           :disabled="disabledVerify"
           :loading="loadingVerify"
           @click="handleVerify"
+          v-show="loginType!==4"
         >
           {{ $t('common.verify') }}
         </NButton>

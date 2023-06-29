@@ -78,3 +78,10 @@ export function fetchVerify<T>(loginParam: Object) {
     data: loginParam,
   })
 }
+
+export function generatewxQRCode<T>() {
+    return post<T>({
+      url: '/generateQRCode',
+    })
+  }
+
