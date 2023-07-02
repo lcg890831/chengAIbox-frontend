@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import { NButton, NInput, NPopconfirm, NSelect, useMessage } from 'naive-ui'
+import { NButton, NInput,NUpload,NImage, NPopconfirm, NSelect, useMessage } from 'naive-ui'
 import type { Language, Theme } from '@/store/modules/app/helper'
 import { SvgIcon } from '@/components/common'
-import { useAppStore, useUserStore } from '@/store'
+import { useAppStore, useUserStore ,useAuthStore} from '@/store'
 import type { UserInfo } from '@/store/modules/user/helper'
 import { getCurrentDate } from '@/utils/functions'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { t } from '@/locales'
+import defaultAvatar from '@/assets/avatar.jpg'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -19,12 +20,17 @@ const ms = useMessage()
 const theme = computed(() => appStore.theme)
 
 const userInfo = computed(() => userStore.userInfo)
-
+if(userInfo.value.avatar=='')userInfo.value.avatar = defaultAvatar
 const avatar = ref(userInfo.value.avatar ?? '')
 
-const name = ref(userInfo.value.name ?? '')
 
-const description = ref(userInfo.value.description ?? '')
+const nickname = ref(userInfo.value.nickname ?? '')
+
+
+const token = useAuthStore().token
+const headers={'Authorization':`Bearer ${token}`}
+const file = ref('')
+
 
 const language = computed({
   get() {
@@ -52,20 +58,23 @@ const themeOptions: { label: string; key: Theme; icon: string }[] = [
     icon: 'ri:moon-foggy-line',
   },
 ]
-
+//TODO 支持多语言
 const languageOptions: { label: string; key: Language; value: Language }[] = [
   { label: '简体中文', key: 'zh-CN', value: 'zh-CN' },
   { label: '繁體中文', key: 'zh-TW', value: 'zh-TW' },
-  { label: 'English', key: 'en-US', value: 'en-US' },
-  { label: '한국어', key: 'ko-KR', value: 'ko-KR' },
+  // { label: 'English', key: 'en-US', value: 'en-US' },
+  // { label: '한국어', key: 'ko-KR', value: 'ko-KR' },
 ]
 
-function updateUserInfo(options: Partial<UserInfo>) {
-  userStore.updateUserInfo(options)
+function updateUserInfo(paramUser) {
+  console.log('aaa',paramUser)
+  userStore.updateUserInfo(paramUser)
   ms.success(t('common.success'))
 }
 
-function handleReset() {
+
+
+function handleUpdate() {
   userStore.resetUserInfo()
   ms.success(t('common.success'))
   window.location.reload()
@@ -119,6 +128,19 @@ function handleImportButtonClick(): void {
   if (fileInput)
     fileInput.click()
 }
+
+function updateAvatar(file) {
+  console.log('updateAvatar',file.event.target.response)
+      // 执行上传文件的逻辑，例如使用 XMLHttpRequest 或其他方式上传文件到服务器
+      // 上传成功后，获取服务器返回的图片 URL
+      
+      // 更新头像图片的 URL
+      avatar.value = file.url;
+      
+      // 继续执行上传逻辑
+      return true;
+    }
+
 </script>
 
 <template>
@@ -127,30 +149,43 @@ function handleImportButtonClick(): void {
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.avatarLink') }}</span>
         <div class="flex-1">
-          <NInput v-model:value="avatar" placeholder="" />
+          <NUpload
+      v-model="file"
+      accept="image/*"
+      :show-file-list=false
+      :on-finish="updateAvatar"
+      :headers=headers
+      :disabled=true
+      action="/api/uploadAvatar"
+
+    >
+      <NImage
+        :src="avatar"
+        :preview-disabled = true
+        width="100"
+        height="100"
+        :fallback-src="defaultAvatar"
+      ></NImage>
+    </NUpload>
         </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
-          {{ $t('common.save') }}
-        </NButton>
+
       </div>
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.name') }}</span>
         <div class="w-[200px]">
-          <NInput v-model:value="name" placeholder="" />
+          <NInput v-model:value="nickname" placeholder="" />
         </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ name })">
-          {{ $t('common.save') }}
+        <NButton size="tiny" text type="primary" @click="updateUserInfo({nickname})">
+          {{ $t('common.update') }}
         </NButton>
       </div>
-      <div class="flex items-center space-x-4">
+      <!-- <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.description') }}</span>
         <div class="flex-1">
           <NInput v-model:value="description" placeholder="" />
-        </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ description })">
-          {{ $t('common.save') }}
-        </NButton>
-      </div>
+        </div> 
+
+      </div>-->
       <div
         class="flex items-center space-x-4"
         :class="isMobile && 'items-start'"
@@ -213,12 +248,11 @@ function handleImportButtonClick(): void {
           />
         </div>
       </div>
-      <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.resetUserInfo') }}</span>
-        <NButton size="small" @click="handleReset">
-          {{ $t('common.reset') }}
+      <!-- <div class="flex items-center space-x-4">
+        <NButton size="medium" type="primary" class="m-auto" :style="{ width: '95%' ,margin: 'auto' }" @click="updateUserInfo({avatar,nickname})">
+          {{ $t('common.save') }}
         </NButton>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

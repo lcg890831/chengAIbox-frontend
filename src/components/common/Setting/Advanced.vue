@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { NButton, NInput, NSlider, useMessage } from 'naive-ui'
+import { NButton, NInput,NTooltip, NSlider, useMessage } from 'naive-ui'
 import { useSettingStore } from '@/store'
 import type { SettingsState } from '@/store/modules/settings/helper'
 import { t } from '@/locales'
@@ -28,9 +28,9 @@ function handleReset() {
 </script>
 
 <template>
-  <div class="p-4 space-y-5 min-h-[200px]">
+  <div class="p-4 space-y-5 min-h-[200px]" >
     <div class="space-y-6">
-      <div class="flex items-center space-x-4">
+      <!-- <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[120px]">{{ $t('setting.role') }}</span>
         <div class="flex-1">
           <NInput v-model:value="systemMessage" type="textarea" :autosize="{ minRows: 1, maxRows: 4 }" />
@@ -38,13 +38,19 @@ function handleReset() {
         <NButton size="tiny" text type="primary" @click="updateSettings({ systemMessage })">
           {{ $t('common.save') }}
         </NButton>
-      </div>
+      </div> -->
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[120px]">{{ $t('setting.temperature') }} </span>
         <div class="flex-1">
           <NSlider v-model:value="temperature" :max="1" :min="0" :step="0.1" />
         </div>
         <span>{{ temperature }}</span>
+        <NTooltip trigger="hover">
+    <template #trigger>
+      <NButton> 鸭子 </NButton>
+    </template>
+    {{ $t('common.temperature') }}
+  </NTooltip>
         <NButton size="tiny" text type="primary" @click="updateSettings({ temperature })">
           {{ $t('common.save') }}
         </NButton>
@@ -65,6 +71,8 @@ function handleReset() {
           {{ $t('common.reset') }}
         </NButton>
       </div>
+
+      
     </div>
   </div>
 </template>

@@ -1,10 +1,12 @@
 <script setup lang='ts'>
 import { computed, ref,onMounted } from 'vue'
-import { NButton, NInput,  NModal, NSpace, useMessage,NTabPane,NTabs,NFormItemRow,NForm,NImage } from 'naive-ui'
-import { sendVerifyCode,login,generatewxQRCode } from '@/api'
-import { useAuthStore } from '@/store'
+import { NButton, NInput,  NModal, NSpace, useMessage,NTabPane,NTabs,NFormItemRow,NForm,NImage,NAlert } from 'naive-ui'
+import { sendVerifyCode,login,generatewxQRCode,fetchOpenId } from '@/api'
+import { useAuthStore,useUserStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 interface Props {
   visible: boolean
 }
@@ -12,7 +14,7 @@ interface Props {
 defineProps<Props>()
 
 const authStore = useAuthStore()
-
+const userStore = useUserStore()
 const ms = useMessage()
 const { isMobile } = useBasicLayout()
 const loading = ref(false)
@@ -36,6 +38,10 @@ import('@/locales')
   })
 
 async function handleVerify() {
+  //微信免登
+  if(loginType.value==3 || loginType.value==4){
+    token.value = 'free'
+  }
   const secretKey = token.value.trim()
   let loginParam = {
     'username': username.value.trim(),
@@ -45,6 +51,7 @@ async function handleVerify() {
     'isMobile' : isMobile.value
   };
 
+
   if (!secretKey||!username.value||!loginType.value)
     return
   
@@ -53,6 +60,8 @@ async function handleVerify() {
     const result = await login(loginParam)
     console.log('result',result)
     authStore.setToken(result.data.token)
+    //登录成功，清空缓存
+    await userStore.loadUserFromApi()
     ms.success('success')
     window.location.reload()
   }
@@ -118,35 +127,45 @@ function handleLoginType (value: string) {
   }
 
   const qrcodeElement = ref(null);
-    const callbackSuccess = ref(false);
+    const isTimeOut = ref(false);
     const pollingTimer = ref(null);
     const qrcodeImage = ref(null);
 
     const generateQRCode = async () => {
+      if(!isMobile.value && !authStore.token){
       try {
         const response = await generatewxQRCode();
         console.log(response.data.ticket)
-        console.log(response.data)
+        console.log(response.data._uuid)
         qrcodeImage.value = 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket='+encodeURIComponent(response.data.ticket);
-        
-        //pollingCallbackStatus();
+        pollingCallbackStatus(response.data._uuid);
       } catch (error) {
         console.error(error);
       }
+    }
     };
 
-    const pollingCallbackStatus = () => {
+    const pollingCallbackStatus = (uuid) => {
+      let roundTime = 0;
+      isTimeOut.value = false;
       pollingTimer.value = setInterval(async () => {
         try {
-          const response = await axios.get('/api/checkCallbackStatus');
-          if (response.data.callbackSuccess) {
+          const response = await fetchOpenId(uuid);
+          if (response.data?.wxopenId) {
             clearInterval(pollingTimer.value);
-            callbackSuccess.value = true;
-            // 根据业务需求，设置 token
-          } else if (response.data.callbackTimeout) {
-            clearInterval(pollingTimer.value);
-            // 处理超时逻辑，比如显示刷新按钮
-          }
+            authStore.session = null;
+            username.value = response.data.wxopenId
+            await handleVerify()
+            //router.push({ name: 'Root', query: { 'wxopenId': response.data.wxopenId } });
+
+            return;
+          }else{
+            roundTime+=5;
+            if(roundTime>1820 || authStore.token){
+              isTimeOut.value = true;
+              clearInterval(pollingTimer.value);
+            }
+          } 
         } catch (error) {
           console.error(error);
         }
@@ -154,9 +173,11 @@ function handleLoginType (value: string) {
     };
 
     const refreshQRCode = () => {
-      clearInterval(pollingTimer.value);
-      callbackSuccess.value = false;
       generateQRCode();
+    };
+
+    const clearAllInterval = () => {
+      clearInterval(pollingTimer.value);
     };
 
     onMounted(() => {
@@ -168,29 +189,39 @@ function handleLoginType (value: string) {
 </script>
 
 <template>
-  <NModal :show="visible" style="width: 92%; max-width: 500px">
+  <NModal :show="visible" style="width: 92%; max-width: 500px" >
     <div class="p-10 bg-white rounded dark:bg-slate-800">
       <NSpace vertical justify="center">
         <header class="space-y-2">
-          <h2 class="text-2xl font-bold text-center text-slate-800 dark:text-neutral-200">
+          <h2 class="text-2xl font-bold text-center text-[#18A058] dark:text-neutral-200">
             {{ $t('common.unauthorizedTips') }}
           </h2>
+          <p class="text-x0.3 text-center text-[#999999]  dark:text-[#ffffff]">{{ $t('common.welcomec') }}</p>
 
         <!-- <Icon403 class="w-[200px] m-auto" />  -->
         </header>
         <br>
         <NTabs
-      class="card-tabs"
-      size="medium"
+      size="large"
+      type="bar"
+      justify-content="center"
       animated
       @update:value="handleLoginType"
-      pane-wrapper-style="margin: 0 -4px"
-      pane-style=" box-sizing: border-box;"
+      pane-wrapper-style="margin: auto"
+      pane-class="image-center"
     >
-    <NTabPane name="wechat" tab="微信扫码登录" v-if="!isMobile">
-      <NForm size="medium">
-        <NImage :src="qrcodeImage" ref="qrcodeElement" v-show="qrcodeImage"/>
-      </NForm>
+    <NTabPane name="wechat" tab="微信扫码登录" v-if="!isMobile" >
+        <NImage width=320 height=320 :src="qrcodeImage" ref="qrcodeElement" v-show="qrcodeImage" class="image-center" :lazy=true />
+        <div v-if="isTimeOut" class="overlay" @click="refreshQRCode">
+          <NAlert title="二维码已失效" type="warning" :bordered=false >
+            请点击重新获取
+          </NAlert>
+            </div>
+            <div style="margin: auto">
+              <p class="text-base text-center text-[#18A058] dark:text-[#ffffff]">
+            ↑扫码关注公众号『 AI助手小橙 』登录↑
+            </p>
+            </div>
       </NTabPane>
     <NTabPane name="verify" tab="验证码登录">
         <NForm size="medium">
@@ -209,6 +240,9 @@ function handleLoginType (value: string) {
             {{ buttonText }}
           </NButton>
           </NFormItemRow>
+        <p class="text-base text-center text-[#18A058] dark:text-[#ffffff]">
+          {{ $t('common.loginDesc') }}
+        </p>
         </NForm>
       </NTabPane>
     <NTabPane name="password" tab="密码登录" v-if="showPass">
@@ -220,13 +254,17 @@ function handleLoginType (value: string) {
           <NInput v-model:value="token" type="password"  :placeholder="$t('common.phPassword')" @keypress="handlePress" />
         </NFormItemRow>
       </NForm>
+      <br>
+        <p class="text-base text-center text-[#18A058] dark:text-[#ffffff]">
+          {{ $t('common.loginDesc') }}
+        </p>
       </NTabPane>
 
       </NTabs>
         <NButton
           type="primary"
           block
-          :style="{ width: '95%', marginLeft: '8px' }"
+          :style="{ width: '95%' ,margin: 'auto' }"
           :disabled="disabledVerify"
           :loading="loadingVerify"
           @click="handleVerify"
@@ -235,12 +273,9 @@ function handleLoginType (value: string) {
           {{ $t('common.verify') }}
         </NButton>
         
-        <br>
-        <p class="text-base text-center text-slate-500 dark:text-[#ffffff]">
-          {{ $t('common.loginDesc') }}
-        </p>
-        <p class="text-base text-center text-[#128346] dark:text-[#4B9E5F]">
-         <span style="color:#18492f"> Chatgpt正版AI助手<b>限免</b>注册中，8月1日前新用户来就送<b>1个月超级会员！！</b></span>
+
+        <p class="text-base text-center text-[#18A058] dark:text-[#4B9E5F]">
+         <span style="color:#18492f">内置<b>Chatgpt3.5 & 4</b>的AI助手<b>首轮</b>注册中，8月1日前新用户每天可<b>免费</b>进行<b>100次</b>提问！后续还会不断增加新鲜好玩的功能，让您体验最有趣的AI！</span>
         </p>
         <!-- <p class="text-base text-center text-slate-500 dark:text-slate-500">
             {{ $t('common.loginDesc2') }}
@@ -250,3 +285,29 @@ function handleLoginType (value: string) {
     </div>
   </NModal>
 </template>
+
+<style>
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay button {
+  padding: 10px 20px;
+  background-color: #fff;
+  border: none;
+}
+.image-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+</style>

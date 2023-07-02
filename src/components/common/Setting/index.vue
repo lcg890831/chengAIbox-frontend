@@ -20,8 +20,10 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emit>()
 
 const authStore = useAuthStore()
+//TODO 隐藏高级
+//const isChatGPTAPI = computed<boolean>(() => !!authStore.isChatGPTAPI)
 
-const isChatGPTAPI = computed<boolean>(() => !!authStore.isChatGPTAPI)
+const isChatGPTAPI = ref(false);
 
 const active = ref('General')
 
@@ -57,13 +59,13 @@ const show = computed({
             <Advanced />
           </div>
         </NTabPane>
-        <NTabPane name="Config" tab="Config">
+        <!-- <NTabPane name="Config" tab="Config">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:list-settings-line" />
             <span class="ml-2">{{ $t('setting.config') }}</span>
           </template>
           <About />
-        </NTabPane>
+        </NTabPane> -->
       </NTabs>
     </div>
   </NModal>

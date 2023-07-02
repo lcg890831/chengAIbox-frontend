@@ -79,9 +79,29 @@ export function fetchVerify<T>(loginParam: Object) {
   })
 }
 
-export function generatewxQRCode<T>() {
+export function generatewxQRCode<T = any>() {
     return post<T>({
       url: '/generateQRCode',
     })
   }
+
+export function fetchOpenId<T = any>(uuid: any) {
+    return post<T>({
+      url: '/fetchOpenId',
+      data: {'_uuid':uuid}
+    })
+  }
+  export function getUser<T = any>() {
+    return post<T>({
+      url: '/getUser'
+    })
+  }
+
+  export function updateUser<T = any>(userInfo: Object) {
+    return post<T>({
+      url: '/updateUser',
+      data: userInfo
+    })
+  }
+  
 
